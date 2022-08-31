@@ -7,8 +7,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class HelperForConferencesBotApplication {
 
 	public static void main(String[] args) {
-
-		//s
 		SpringApplication.run(HelperForConferencesBotApplication.class, args);
 	}
 
