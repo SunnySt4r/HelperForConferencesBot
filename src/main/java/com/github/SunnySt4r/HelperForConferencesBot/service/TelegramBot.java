@@ -1,6 +1,7 @@
 package com.github.SunnySt4r.HelperForConferencesBot.service;
 
 import com.github.SunnySt4r.HelperForConferencesBot.config.BotConfig;
+import com.github.SunnySt4r.HelperForConferencesBot.service.test.Question;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -36,6 +37,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/start":
                     startCommandReceived(chatId, update.getMessage().getChat().getUserName());
                     break;
+                case "/test":
+                    //check tests[] if 1 demonstrate
+                    //
                 default:
                     sendMessage(chatId, "Sorry");
                     break;
