@@ -1,6 +1,7 @@
 package com.github.SunnySt4r.HelperForConferencesBot.service;
 
 import com.github.SunnySt4r.HelperForConferencesBot.config.BotConfig;
+import com.github.SunnySt4r.HelperForConferencesBot.service.test.TestInit;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -11,6 +12,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 public class TelegramBot extends TelegramLongPollingBot {
 
     final BotConfig botConfig;
+    TestInit testInit = new TestInit();
 
     public TelegramBot(BotConfig botConfig){
         this.botConfig = botConfig;
@@ -36,6 +38,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/start":
                     startCommandReceived(chatId, update.getMessage().getChat().getUserName());
                     break;
+                case "/test":
+                    //check tests[] if 1 demonstrate
+                    //
                 default:
                     sendMessage(chatId, "Sorry");
                     break;
@@ -49,13 +54,13 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessage(chatId, answer);
     }
 
-    private void sendMessage(long chatId, String textToSend){
+    private void sendMessage(long chatId, String textToSend) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setText(textToSend);
         sendMessage.setChatId(String.valueOf(chatId));
-        try{
+        try {
             execute(sendMessage);
-        }catch (TelegramApiException e){
+        } catch (TelegramApiException e) {
             //todo logs
         }
     }
