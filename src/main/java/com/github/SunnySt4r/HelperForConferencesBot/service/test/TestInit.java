@@ -1,6 +1,5 @@
 package com.github.SunnySt4r.HelperForConferencesBot.service.test;
 
-import lombok.Data;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
