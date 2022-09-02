@@ -1,19 +1,28 @@
 package com.github.SunnySt4r.HelperForConferencesBot.service;
 
 import com.github.SunnySt4r.HelperForConferencesBot.config.BotConfig;
+import com.github.SunnySt4r.HelperForConferencesBot.model.User;
+import com.github.SunnySt4r.HelperForConferencesBot.model.UserRepository;
 import com.github.SunnySt4r.HelperForConferencesBot.service.test.Test;
 import com.github.SunnySt4r.HelperForConferencesBot.service.test.TestInit;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.sql.Timestamp;
 import java.util.Map;
 
 @Component
+@Slf4j
 public class TelegramBot extends TelegramLongPollingBot {
 
+    @Autowired
+    private UserRepository userRepository;
     final BotConfig botConfig;
     TestInit testInit = new TestInit();
 
@@ -39,7 +48,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             switch (messageText){
                 case "/start":
-                    addToListOfChatIds(chatId);
+                    registerUser(update.getMessage());
                     startCommandReceived(chatId, update.getMessage().getChat().getUserName());
                     break;
                 case "/test":
@@ -58,9 +67,26 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    private void registerUser(Message message) {
+        if(userRepository.findById(message.getChatId()).isEmpty()){
+            var chatId = message.getChatId();
+            var chat = message.getChat();
+
+            User user = new User();
+            user.setChatId(chatId);
+            user.setFirstName(chat.getFirstName());
+            user.setLastName(chat.getLastName());
+            user.setUserName(chat.getUserName());
+            user.setRegisteredAt(new Timestamp(System.currentTimeMillis()));
+
+            userRepository.save(user);
+            log.info("user saved: " + user);
+        }
+    }
+
     private void startCommandReceived(long chatId, String name){
         String answer = "Hi, @" + name + ", nice to meet you!";
-
+        log.info("Replied to user @" + name);
         sendMessage(chatId, answer);
     }
 
@@ -71,7 +97,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             execute(sendMessage);
         } catch (TelegramApiException e) {
-            //todo logs
+            log.error("Error occurred: " + e.getMessage());
         }
     }
 
@@ -90,9 +116,5 @@ public class TelegramBot extends TelegramLongPollingBot {
             textToSend.append("Вам пока не доступны тесты. Они будут доступны после лекций.");
         }
         sendMessage(chatId, textToSend.toString());
-    }
-
-    private void addToListOfChatIds(long chatId){
-        //todo add chatid into file and parse them into arraylist
     }
 }
