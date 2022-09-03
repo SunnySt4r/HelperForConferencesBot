@@ -60,6 +60,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             if(update.getMessage().getChatId() == 733063854){
                 // sendToAll www.youtube...
                 if(messageText.split("\\s")[0].equals("/sendToAllUsers")){
+                    admin = true;
                     if(messageText.split("\\s")[1].equals("L")){
                         sendToAllUsers(messageText.split("\\s")[2]);
                         unlockTest();
@@ -69,6 +70,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 }
                 //unlock tests if bot restart
                 if(messageText.split("\\s")[0].equals("/unlockTests")){
+                    admin = true;
                     int numberOfTests = Integer.parseInt(messageText.split("\\s")[1]);
                     for(int i=0; i<numberOfTests; i++){
                         unlockTest();
@@ -83,7 +85,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/tests":
                     checkTests(chatId);
                     break;
-                case "/test[12345]":
+                case "/test\\[12345]":
                     System.out.println(messageText);
                     int indexTest = Integer.parseInt(String.valueOf(messageText.charAt(5)));
                     if(indexTest <= TestInit.tests.size()){
