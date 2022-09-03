@@ -22,8 +22,12 @@ public class BotInitializer {
         TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
         try {
             telegramBotsApi.registerBot(bot);
+
         }catch (TelegramApiException e){
             log.error("Error occurred: " + e.getMessage());
         }
+        //todo uncomment when it need
+
+//        bot.sendToAllUsers("Привет, я перезагрузился и готов к вашим командам");
     }
 }

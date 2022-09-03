@@ -7,13 +7,11 @@ import java.util.HashMap;
 
 @Component
 public class TestInit {
-    static HashMap<Test, Boolean> tests;
+
+    public static HashMap<Test, Boolean> tests;
 
     ArrayList<String[][]> testsArray = new ArrayList<>();
 
-    public HashMap<Test, Boolean> getTests() {
-        return tests;
-    }
     public TestInit(){
         //Test 1
         String[][] test1Arr = {
