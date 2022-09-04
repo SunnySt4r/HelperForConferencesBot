@@ -12,10 +12,13 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.sql.Timestamp;
@@ -85,13 +88,27 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/tests":
                     checkTests(chatId);
                     break;
-                case "/test\\[12345]":
+                case "/test1":
+                case "/test2":
+                case "/test3":
+                case "/test4":
+                case "/test5":
                     System.out.println(messageText);
                     int indexTest = Integer.parseInt(String.valueOf(messageText.charAt(5)));
-                    if(indexTest <= TestInit.tests.size()){
-                        sendTestToUser(chatId, indexTest);
-                    }else{
-                        sendMessage(chatId, "Теста с таким номером не существует.");
+                    if(userRepository.findById(update.getMessage().getChatId()).isEmpty()){
+                        sendMessage(update.getMessage().getChatId(), "Извините, но вы не прописывали команду /start");
+                    }else {
+                        User user = userRepository.findById(update.getMessage().getChatId()).get();
+                        user.setCurrentTest(indexTest);
+                        user.setCurrentQuestion(1);
+                        userRepository.save(user);
+                        Test currentTest = testInit.getTest(user.getCurrentTest());
+                        if(currentTest != null){
+                            sendQuestion(user, null);
+                        }else {
+                            sendMessage(chatId, "Извините, но данный тест ещё не доступен." +
+                                    " Подождите пока выйдет лекция на эту тему.");
+                        }
                     }
                     break;
                 case "/top":
@@ -104,22 +121,132 @@ public class TelegramBot extends TelegramLongPollingBot {
                     }
                     break;
             }
+        } else if (update.hasCallbackQuery()) {
+            String callbackData = update.getCallbackQuery().getData();
+            long messageId = update.getCallbackQuery().getMessage().getMessageId();
+            long chatId = update.getCallbackQuery().getMessage().getChatId();
+            if(userRepository.findById(chatId).isEmpty()){
+                sendMessage(chatId, "Извините, но вы не прописывали команду /start");
+            }else{
+                User user = userRepository.findById(chatId).get();
+                int currentQuestion = user.getCurrentQuestion() + 1;
+                if(currentQuestion > 5){
+                    EditMessageText editMessage = new EditMessageText();
+                    editMessage.setText("Вы набрали за этот тест " + getPoints(user) + " баллов.");
+                    editMessage.setChatId(user.getChatId());
+                    editMessage.setMessageId(Integer.parseInt(String.valueOf(messageId)));
+                    try {
+                        execute(editMessage);
+                    } catch (TelegramApiException e) {
+                        log.error("Error occurred: " + e.getMessage());
+                    }
+                }else{
+                    user.setCurrentQuestion(currentQuestion);
+                    userRepository.save(user);
+                    if(callbackData.equals("true")){
+                        addPoints(user);
+                    }
+                    sendQuestion(user, messageId);
+                }
+            }
+        }
+    }
+
+    private void addPoints(User user) {
+        int currentTest = user.getCurrentTest();
+        switch (currentTest){
+            case 1:
+                if(user.getPointsTest1()<user.getCurrentQuestion()){
+                    user.setPointsTest1(user.getPointsTest1() + 1);
+                    userRepository.save(user);
+                }
+                break;
+            case 2:
+                if(user.getPointsTest2()<user.getCurrentQuestion()){
+                    user.setPointsTest2(user.getPointsTest2() + 1);
+                    userRepository.save(user);
+                }
+                break;
+            case 3:
+                if(user.getPointsTest3()<user.getCurrentQuestion()){
+                    user.setPointsTest3(user.getPointsTest3() + 1);
+                    userRepository.save(user);
+                }
+                break;
+            case 4:
+                if(user.getPointsTest4()<user.getCurrentQuestion()){
+                    user.setPointsTest4(user.getPointsTest4() + 1);
+                    userRepository.save(user);
+                }
+                break;
+            case 5:
+                if(user.getPointsTest5()<user.getCurrentQuestion()){
+                    user.setPointsTest5(user.getPointsTest5() + 1);
+                    userRepository.save(user);
+                }
+                break;
+        }
+    }
+
+    private int getPoints(User user){
+        int currentTest = user.getCurrentTest();
+        return switch (currentTest) {
+            case 1 -> user.getPointsTest1();
+            case 2 -> user.getPointsTest2();
+            case 3 -> user.getPointsTest3();
+            case 4 -> user.getPointsTest4();
+            case 5 -> user.getPointsTest5();
+            default -> 0;
+        };
+    }
+
+    private void sendQuestion(User user, Long messageId) {
+        Question question = testInit.getTest(user.getCurrentTest()).getQuestion(user.getCurrentQuestion());
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+        int count = 1;
+        for(Map.Entry<String, Boolean> entry : question.getAnswers().entrySet()){
+            var button = new InlineKeyboardButton();
+            button.setText(entry.getKey());
+            button.setCallbackData((entry.getValue())? "true" : "false");
+            if(count<=2){
+                row1.add(button);
+            }else{
+                row2.add(button);
+            }
+            count++;
+        }
+        rowsInline.add(row1);
+        rowsInline.add(row2);
+        inlineKeyboardMarkup.setKeyboard(rowsInline);
+        if(messageId==null){
+            SendMessage sendMessage = new SendMessage();
+            sendMessage.setText(question.getStringQuestion());
+            sendMessage.setChatId(user.getChatId());
+            sendMessage.setReplyMarkup(inlineKeyboardMarkup);
+            try {
+                execute(sendMessage);
+            } catch (TelegramApiException e) {
+                log.error("Error occurred: " + e.getMessage());
+            }
+        }else{
+            EditMessageText editMessage = new EditMessageText();
+            editMessage.setText(question.getStringQuestion());
+            editMessage.setChatId(user.getChatId());
+            editMessage.setMessageId(Integer.parseInt(String.valueOf(messageId)));
+            editMessage.setReplyMarkup(inlineKeyboardMarkup);
+            try {
+                execute(editMessage);
+            } catch (TelegramApiException e) {
+                log.error("Error occurred: " + e.getMessage());
+            }
         }
     }
 
     private void sendTop(long chatId) {
         //todo top
-    }
-
-    private void sendTestToUser(long chatId, int indexTest) {
-        int count = 1;
-        for(Map.Entry<Test, Boolean> entry: TestInit.tests.entrySet()){
-            if(count == indexTest && entry.getValue()){
-                for(Question question : entry.getKey().getQuestions()){
-                    //todo tests
-                }
-            }
-        }
     }
 
     private void registerUser(Message message) {

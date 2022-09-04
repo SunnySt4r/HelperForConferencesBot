@@ -1,5 +1,7 @@
 package com.github.SunnySt4r.HelperForConferencesBot.model;
 
+import com.github.SunnySt4r.HelperForConferencesBot.service.test.Test;
+
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import java.sql.Timestamp;
@@ -11,17 +13,32 @@ public class User {
     private Long chatId;
 
     private String firstName;
-
     private String lastName;
-
     private String userName;
-
     private Timestamp registeredAt;
+    private int currentTest;
+    private int currentQuestion;
+    private int pointsTest1;
+    private int pointsTest2;
+    private int pointsTest3;
+    private int pointsTest4;
+    private int pointsTest5;
 
-    private Integer pointsTest1;
-    private Integer pointsTest2;
-    private Integer pointsTest3;
-    private Integer pointsTest4;
+    public int getCurrentTest() {
+        return currentTest;
+    }
+
+    public void setCurrentTest(int currentTest) {
+        this.currentTest = currentTest;
+    }
+
+    public int getCurrentQuestion() {
+        return currentQuestion;
+    }
+
+    public void setCurrentQuestion(int currentQuestion) {
+        this.currentQuestion = currentQuestion;
+    }
 
     public Integer getPointsTest1() {
         return pointsTest1;
@@ -62,8 +79,6 @@ public class User {
     public void setPointsTest5(Integer pointsTest5) {
         this.pointsTest5 = pointsTest5;
     }
-
-    private Integer pointsTest5;
 
     public Long getChatId() {
         return chatId;

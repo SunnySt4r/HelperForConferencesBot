@@ -4,19 +4,27 @@ import java.util.HashMap;
 
 
 public class Question {
-    String question;
+    String stringQuestion;
 
     //answers, ifRight
     HashMap<String, Boolean> answers;
 
-    //open question
-    public Question(String question){
-        this.question = question;
+    public String getStringQuestion() {
+        return stringQuestion;
     }
 
-    //question
-    public Question(String question,  HashMap<String, Boolean> answers){
-        this(question);
+    public HashMap<String, Boolean> getAnswers() {
+        return answers;
+    }
+
+    //open stringQuestion
+    public Question(String stringQuestion){
+        this.stringQuestion = stringQuestion;
+    }
+
+    //stringQuestion
+    public Question(String stringQuestion, HashMap<String, Boolean> answers){
+        this(stringQuestion);
         this.answers = answers;
     }
 }
