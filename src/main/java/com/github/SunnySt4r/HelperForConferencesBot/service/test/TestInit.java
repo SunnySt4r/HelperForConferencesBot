@@ -8,8 +8,7 @@ import java.util.Map;
 
 @Component
 public class TestInit {
-
-    public static HashMap<Test, Boolean> tests;
+    ArrayList<Test> tests;
 
     ArrayList<String[][]> testsArray = new ArrayList<>();
 
@@ -36,7 +35,7 @@ public class TestInit {
         };
         testsArray.add(test3Arr);
 
-        tests = new HashMap<>();
+        tests = new ArrayList<>();
         for (String[][] strings : testsArray) {
             Question[] questions = new Question[strings[0].length];
             for (int j = 0; j < strings[0].length; j++) {
@@ -47,18 +46,17 @@ public class TestInit {
                 }
                 questions[j] = new Question(strings[0][j], answers);
             }
-            tests.put(new Test(questions), false);
+            tests.add(new Test(questions));
         }
     }
 
     public Test getTest(int id){
-        int count = 1;
-        for(Map.Entry<Test, Boolean> entry : tests.entrySet()){
-            if(count == id && entry.getValue()){
-                return entry.getKey();
-            }
-            count++;
+        if(tests.get(id - 1).isUnlock()){
+            return tests.get(id - 1);
         }
         return null;
+    }
+    public ArrayList<Test> getTests() {
+        return tests;
     }
 }

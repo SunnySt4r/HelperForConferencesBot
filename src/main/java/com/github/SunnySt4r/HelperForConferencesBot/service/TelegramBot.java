@@ -34,7 +34,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     private UserRepository userRepository;
     final BotConfig botConfig;
     TestInit testInit = new TestInit();
-
     List<BotCommand> botCommandList = new ArrayList<>();
 
     public TelegramBot(BotConfig botConfig){
@@ -79,6 +78,11 @@ public class TelegramBot extends TelegramLongPollingBot {
                         unlockTest();
                     }
                 }
+                //clear points of tests in database
+                if(messageText.equals("/clear")){
+                    admin = true;
+                    clearAllPoints();
+                }
             }
             switch (messageText){
                 case "/start":
@@ -98,12 +102,12 @@ public class TelegramBot extends TelegramLongPollingBot {
                     if(userRepository.findById(update.getMessage().getChatId()).isEmpty()){
                         sendMessage(update.getMessage().getChatId(), "Извините, но вы не прописывали команду /start");
                     }else {
-                        User user = userRepository.findById(update.getMessage().getChatId()).get();
-                        user.setCurrentTest(indexTest);
-                        user.setCurrentQuestion(1);
-                        userRepository.save(user);
-                        Test currentTest = testInit.getTest(user.getCurrentTest());
+                        Test currentTest = testInit.getTest(indexTest);
                         if(currentTest != null){
+                            User user = userRepository.findById(update.getMessage().getChatId()).get();
+                            user.setCurrentTest(indexTest);
+                            user.setCurrentQuestion(1);
+                            userRepository.save(user);
                             sendQuestion(user, null);
                         }else {
                             sendMessage(chatId, "Извините, но данный тест ещё не доступен." +
@@ -142,47 +146,55 @@ public class TelegramBot extends TelegramLongPollingBot {
                     }
                 }else{
                     user.setCurrentQuestion(currentQuestion);
-                    userRepository.save(user);
                     if(callbackData.equals("true")){
-                        addPoints(user);
+                        addPoint(user);
                     }
+                    userRepository.save(user);
                     sendQuestion(user, messageId);
                 }
             }
         }
     }
 
-    private void addPoints(User user) {
+    private void clearAllPoints() {
+        for(User user : userRepository.findAll()){
+            user.setPointsTest1(0);
+            user.setPointsTest2(0);
+            user.setPointsTest3(0);
+            user.setPointsTest4(0);
+            user.setPointsTest5(0);
+            user.setCurrentTest(0);
+            user.setCurrentQuestion(0);
+            userRepository.save(user);
+        }
+    }
+
+    private void addPoint(User user) {
         int currentTest = user.getCurrentTest();
         switch (currentTest){
             case 1:
                 if(user.getPointsTest1()<user.getCurrentQuestion()){
                     user.setPointsTest1(user.getPointsTest1() + 1);
-                    userRepository.save(user);
                 }
                 break;
             case 2:
                 if(user.getPointsTest2()<user.getCurrentQuestion()){
                     user.setPointsTest2(user.getPointsTest2() + 1);
-                    userRepository.save(user);
                 }
                 break;
             case 3:
                 if(user.getPointsTest3()<user.getCurrentQuestion()){
                     user.setPointsTest3(user.getPointsTest3() + 1);
-                    userRepository.save(user);
                 }
                 break;
             case 4:
                 if(user.getPointsTest4()<user.getCurrentQuestion()){
                     user.setPointsTest4(user.getPointsTest4() + 1);
-                    userRepository.save(user);
                 }
                 break;
             case 5:
                 if(user.getPointsTest5()<user.getCurrentQuestion()){
                     user.setPointsTest5(user.getPointsTest5() + 1);
-                    userRepository.save(user);
                 }
                 break;
         }
@@ -196,7 +208,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             case 3 -> user.getPointsTest3();
             case 4 -> user.getPointsTest4();
             case 5 -> user.getPointsTest5();
-            default -> 0;
+            default -> -1;
         };
     }
 
@@ -226,6 +238,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             sendMessage.setText(question.getStringQuestion());
             sendMessage.setChatId(user.getChatId());
             sendMessage.setReplyMarkup(inlineKeyboardMarkup);
+
             try {
                 execute(sendMessage);
             } catch (TelegramApiException e) {
@@ -298,28 +311,23 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void unlockTest(){
-        boolean allUnlock = true;
-        for(Map.Entry<Test, Boolean> entry: TestInit.tests.entrySet()){
-            if(!entry.getValue()){
-                allUnlock = false;
-                TestInit.tests.put(entry.getKey(), true);
+        for(int i=0; i<testInit.getTests().size(); i++){
+            if(!testInit.getTests().get(i).isUnlock()){
+                testInit.getTests().get(i).setUnlock(true);
                 break;
             }
         }
-        log.info("AllUnlock: " + allUnlock);
-        log.info("tests: " + TestInit.tests);
+        log.info("tests: " + testInit.getTests());
     }
 
     private void checkTests(long chatId){
         StringBuilder textToSend = new StringBuilder();
         boolean atLeastOne = false;
-        int count = 1;
-        for(Map.Entry<Test, Boolean> entry: TestInit.tests.entrySet()){
-            if(entry.getValue()){
-                textToSend.append("\n\nВам доступен тест: /test").append(count);
+        for(Test test : testInit.getTests()){
+            if(test.isUnlock()){
+                textToSend.append("\n\nВам доступен тест: /test").append(testInit.getTests().indexOf(test) + 1);
                 atLeastOne = true;
             }
-            count++;
         }
         if(!atLeastOne){
             textToSend.append("Вам пока не доступны тесты. Они будут доступны после лекций.");
