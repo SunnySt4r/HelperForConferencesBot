@@ -105,10 +105,14 @@ public class TelegramBot extends TelegramLongPollingBot {
                         Test currentTest = testInit.getTest(indexTest);
                         if(currentTest != null){
                             User user = userRepository.findById(update.getMessage().getChatId()).get();
-                            user.setCurrentTest(indexTest);
-                            user.setCurrentQuestion(1);
-                            userRepository.save(user);
-                            sendQuestion(user, null);
+                            if(user.getCurrentQuestion() + user.getCurrentTest() == 0){
+                                user.setCurrentTest(indexTest);
+                                user.setCurrentQuestion(1);
+                                userRepository.save(user);
+                                sendQuestion(user, null);
+                            }else{
+                                sendMessage(chatId, "Вы уже запустили прохождение одного теста.");
+                            }
                         }else {
                             sendMessage(chatId, "Извините, но данный тест ещё не доступен." +
                                     " Подождите пока выйдет лекция на эту тему.");
@@ -133,12 +137,18 @@ public class TelegramBot extends TelegramLongPollingBot {
                 sendMessage(chatId, "Извините, но вы не прописывали команду /start");
             }else{
                 User user = userRepository.findById(chatId).get();
+                if(callbackData.equals("true")){
+                    addPoint(user);
+                }
                 int currentQuestion = user.getCurrentQuestion() + 1;
-                if(currentQuestion > 5){
+                if(currentQuestion == 6){
                     EditMessageText editMessage = new EditMessageText();
                     editMessage.setText("Вы набрали за этот тест " + getPoints(user) + " баллов.");
                     editMessage.setChatId(user.getChatId());
                     editMessage.setMessageId(Integer.parseInt(String.valueOf(messageId)));
+                    user.setCurrentQuestion(0);
+                    user.setCurrentTest(0);
+                    userRepository.save(user);
                     try {
                         execute(editMessage);
                     } catch (TelegramApiException e) {
@@ -146,9 +156,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                     }
                 }else{
                     user.setCurrentQuestion(currentQuestion);
-                    if(callbackData.equals("true")){
-                        addPoint(user);
-                    }
                     userRepository.save(user);
                     sendQuestion(user, messageId);
                 }
@@ -173,27 +180,27 @@ public class TelegramBot extends TelegramLongPollingBot {
         int currentTest = user.getCurrentTest();
         switch (currentTest){
             case 1:
-                if(user.getPointsTest1()<user.getCurrentQuestion()){
+                if(user.getPointsTest1()<5){
                     user.setPointsTest1(user.getPointsTest1() + 1);
                 }
                 break;
             case 2:
-                if(user.getPointsTest2()<user.getCurrentQuestion()){
+                if(user.getPointsTest2()<5){
                     user.setPointsTest2(user.getPointsTest2() + 1);
                 }
                 break;
             case 3:
-                if(user.getPointsTest3()<user.getCurrentQuestion()){
+                if(user.getPointsTest3()<5){
                     user.setPointsTest3(user.getPointsTest3() + 1);
                 }
                 break;
             case 4:
-                if(user.getPointsTest4()<user.getCurrentQuestion()){
+                if(user.getPointsTest4()<5){
                     user.setPointsTest4(user.getPointsTest4() + 1);
                 }
                 break;
             case 5:
-                if(user.getPointsTest5()<user.getCurrentQuestion()){
+                if(user.getPointsTest5()<5){
                     user.setPointsTest5(user.getPointsTest5() + 1);
                 }
                 break;
@@ -210,6 +217,16 @@ public class TelegramBot extends TelegramLongPollingBot {
             case 5 -> user.getPointsTest5();
             default -> -1;
         };
+    }
+    private void setPoints(User user, int points){
+        int currentTest = user.getCurrentTest();
+        switch (currentTest) {
+            case 1 -> user.setPointsTest1(points);
+            case 2 -> user.setPointsTest2(points);
+            case 3 -> user.setPointsTest3(points);
+            case 4 -> user.setPointsTest4(points);
+            case 5 -> user.setPointsTest5(points);
+        }
     }
 
     private void sendQuestion(User user, Long messageId) {
@@ -234,11 +251,12 @@ public class TelegramBot extends TelegramLongPollingBot {
         rowsInline.add(row2);
         inlineKeyboardMarkup.setKeyboard(rowsInline);
         if(messageId==null){
+            setPoints(user, 0);
+            userRepository.save(user);
             SendMessage sendMessage = new SendMessage();
             sendMessage.setText(question.getStringQuestion());
             sendMessage.setChatId(user.getChatId());
             sendMessage.setReplyMarkup(inlineKeyboardMarkup);
-
             try {
                 execute(sendMessage);
             } catch (TelegramApiException e) {
@@ -279,6 +297,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    //todo delete/help /setting
     private void createCommandsMenu(){
         try {
             this.execute(new SetMyCommands(botCommandList, new BotCommandScopeDefault(), null));
