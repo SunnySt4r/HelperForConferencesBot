@@ -18,7 +18,9 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.sql.Timestamp;
@@ -118,9 +120,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                                     " Подождите пока выйдет лекция на эту тему.");
                         }
                     }
-                    break;
-                case "/top":
-                    sendTop(chatId);
                     break;
                 default:
                     if(!admin){
@@ -276,10 +275,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private void sendTop(long chatId) {
-        //todo top
-    }
-
     private void registerUser(Message message) {
         if(userRepository.findById(message.getChatId()).isEmpty()){
             var chatId = message.getChatId();
@@ -307,7 +302,9 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void startCommandReceived(long chatId, String name){
-        String answer = "Hi, @" + name + ", nice to meet you!";
+        String answer = "Здравствуйте, @" + name + "!\n" +
+                "Добро пожаловать в бота для тестов по лекциям.\n" +
+                "Чтобы просмотреть доступные тесты напишите /tests или нажмите на меню выбора команд.";
         log.info("Replied to user @" + name);
         sendMessage(chatId, answer);
     }
