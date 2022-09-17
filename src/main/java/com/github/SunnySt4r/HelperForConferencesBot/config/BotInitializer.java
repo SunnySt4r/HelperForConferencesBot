@@ -26,8 +26,6 @@ public class BotInitializer {
         }catch (TelegramApiException e){
             log.error("Error occurred: " + e.getMessage());
         }
-        //todo uncomment when it need
-
-//        bot.sendToAllUsers("Привет, я перезагрузился и готов к вашим командам");
+        bot.sendToAllUsers("Привет, я перезагрузился и готов к вашим командам");
     }
 }

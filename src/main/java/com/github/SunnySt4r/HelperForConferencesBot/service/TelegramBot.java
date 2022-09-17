@@ -18,9 +18,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.sql.Timestamp;
@@ -38,9 +36,17 @@ public class TelegramBot extends TelegramLongPollingBot {
     TestInit testInit = new TestInit();
     List<BotCommand> botCommandList = new ArrayList<>();
 
+    String[] lections = {
+            "https://youtu.be/mYhxGeXHnyw",
+            "https://youtu.be/tBWwymWC8XY",
+    };
+
+    final int MAX_POINTS = 3;
+
     public TelegramBot(BotConfig botConfig){
         this.botConfig = botConfig;
         botCommandList.add(new BotCommand("/start", "Старт бота"));
+        botCommandList.add(new BotCommand("/lections", "Посмотреть ссылки на доступные лекции"));
         botCommandList.add(new BotCommand("/tests", "Посмотреть доступные тесты"));
         createCommandsMenu();
     }
@@ -89,7 +95,13 @@ public class TelegramBot extends TelegramLongPollingBot {
             switch (messageText){
                 case "/start":
                     registerUser(update.getMessage());
-                    startCommandReceived(chatId, update.getMessage().getChat().getUserName());
+                    startChat(chatId, update.getMessage().getChat().getUserName());
+                    break;
+                case "/lections":
+                    for(int i=1; i<lections.length + 1; i++){
+                        String reply = "Лекция " + i + ":\n" + lections[i - 1];
+                        sendMessage(chatId, reply);
+                    }
                     break;
                 case "/tests":
                     checkTests(chatId);
@@ -140,7 +152,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     addPoint(user);
                 }
                 int currentQuestion = user.getCurrentQuestion() + 1;
-                if(currentQuestion == 6){
+                if(currentQuestion == 4){
                     EditMessageText editMessage = new EditMessageText();
                     editMessage.setText("Вы набрали за этот тест " + getPoints(user) + " баллов.");
                     editMessage.setChatId(user.getChatId());
@@ -179,27 +191,27 @@ public class TelegramBot extends TelegramLongPollingBot {
         int currentTest = user.getCurrentTest();
         switch (currentTest){
             case 1:
-                if(user.getPointsTest1()<5){
+                if(user.getPointsTest1()<MAX_POINTS){
                     user.setPointsTest1(user.getPointsTest1() + 1);
                 }
                 break;
             case 2:
-                if(user.getPointsTest2()<5){
+                if(user.getPointsTest2()<MAX_POINTS){
                     user.setPointsTest2(user.getPointsTest2() + 1);
                 }
                 break;
             case 3:
-                if(user.getPointsTest3()<5){
+                if(user.getPointsTest3()<MAX_POINTS){
                     user.setPointsTest3(user.getPointsTest3() + 1);
                 }
                 break;
             case 4:
-                if(user.getPointsTest4()<5){
+                if(user.getPointsTest4()<MAX_POINTS){
                     user.setPointsTest4(user.getPointsTest4() + 1);
                 }
                 break;
             case 5:
-                if(user.getPointsTest5()<5){
+                if(user.getPointsTest5()<MAX_POINTS){
                     user.setPointsTest5(user.getPointsTest5() + 1);
                 }
                 break;
@@ -301,7 +313,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private void startCommandReceived(long chatId, String name){
+    private void startChat(long chatId, String name){
         String answer = "Здравствуйте, @" + name + "!\n" +
                 "Добро пожаловать в бота для тестов по лекциям.\n" +
                 "Чтобы просмотреть доступные тесты напишите /tests или нажмите на меню выбора команд.";
