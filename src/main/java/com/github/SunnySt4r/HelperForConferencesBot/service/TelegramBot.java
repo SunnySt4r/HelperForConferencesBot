@@ -304,7 +304,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    //todo delete/help /setting
     private void createCommandsMenu(){
         try {
             this.execute(new SetMyCommands(botCommandList, new BotCommandScopeDefault(), null));
